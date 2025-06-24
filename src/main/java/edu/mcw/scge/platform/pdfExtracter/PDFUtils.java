@@ -1,7 +1,8 @@
 package edu.mcw.scge.platform.pdfExtracter;
 
-import edu.mcw.scge.platform.dao.implementation.ctd.SectionDAO;
-import edu.mcw.scge.platform.datamodel.ctd.Section;
+
+import edu.mcw.scge.dao.implementation.ctd.SectionDAO;
+import edu.mcw.scge.datamodel.ctd.Section;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;

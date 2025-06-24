@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import edu.mcw.scge.dao.implementation.ctd.SectionDAO;
+import edu.mcw.scge.datamodel.ctd.Section;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -15,6 +17,7 @@ import java.util.List;
 
 
 public class ExcelParser {
+    SectionDAO sectionDAO=new SectionDAO();
     public void parseFile(String file,String sheetName) throws Exception {
         System.out.println("FILE:"+ file);
         FileInputStream fs = new FileInputStream(new File(file));
@@ -28,25 +31,58 @@ public class ExcelParser {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         System.out.println("Module\tSection\tSubSection1\tSubSection2\tSubSection3\tDescription\tRequiredForInitialIND\tRequiredForMarketingApplication\t" +
                 "RequiredForAmendment\tTemplateLinkText\tExampleLinkText\tSubmissionFormat\tNotes\tResources");
-        for (Row row : sheet) {
-            String module= String.valueOf(row.getCell(0));
-            String section= String.valueOf(row.getCell(1));
-            String subSection1= String.valueOf(row.getCell(2));
-            String subSection2= String.valueOf(row.getCell(3));
-            String subSection3= String.valueOf(row.getCell(4));
+        boolean headerRow=true;
+      for (Row row : sheet) {
+            if(headerRow){
+                headerRow=false;
+            }else {
+                boolean module = !String.valueOf(row.getCell(0)).equals("");
+                String subSection1= String.valueOf(row.getCell(1));
+                String subSection2 = String.valueOf(row.getCell(2));
+                String subSection3 = String.valueOf(row.getCell(3));
+                String subSection4 = String.valueOf(row.getCell(4));
+                String sectionCode=nonNullValue(subSection1,subSection2,subSection3,subSection4);
+                String description = String.valueOf(row.getCell(6));
+                String requiredForInitialIND = String.valueOf(row.getCell(7));
+                String requiredForMarketingApplicationsOnly = String.valueOf(row.getCell(8));
+                String submissionTiming = String.valueOf(row.getCell(9));
+                String templateLinkText = String.valueOf(row.getCell(10));
+                String exampleLinkText = String.valueOf(row.getCell(11));
+                String submissionFormat = String.valueOf(row.getCell(12));
+                String notes = String.valueOf(row.getCell(13));
+                String resources = String.valueOf(row.getCell(14));
+                if(!module && sectionCode!=null) {
+                    Section section=new Section();
+                    section.setSectionCode(sectionCode);
+                    section.setRequiredForInitialIND(requiredForInitialIND);
+                    section.setSubmissionTiming(submissionTiming);
+                    section.setRequiredForMarketingApplicationOnly(requiredForMarketingApplicationsOnly);
+                    section.setTemplateLinkText(templateLinkText);
+                    section.setExampleLinkText(exampleLinkText);
+                    section.setSubmissionFormat(submissionFormat);
+                    section.setNotes(notes);
+                    section.setSectionDescription(description);
+                    section.setResources(resources);
+                    update(section);
 
-            String description= String.valueOf(row.getCell(6));
-            String requiredForInitialIND= String.valueOf(row.getCell(7));
-            String requiredForMarketingApplicationsOnly= String.valueOf(row.getCell(8));
-            String requiredForAmendment= String.valueOf(row.getCell(9));
-            String templateLinkText= String.valueOf(row.getCell(10));
-            String exampleLinkText= String.valueOf(row.getCell(11));
-            String submissionFormat= String.valueOf(row.getCell(12));
-            String notes= String.valueOf(row.getCell(13));
-            String resources= String.valueOf(row.getCell(14));
-            System.out.println(module+"\t"+section+"\t"+subSection1+"\t"+subSection2+"\t"+subSection3+"\t"+description+"\t"+requiredForInitialIND+"\t"+
-                    requiredForMarketingApplicationsOnly+"\t"+requiredForAmendment+"\t"+templateLinkText+"\t"+exampleLinkText+"\t"+submissionFormat+"\t"+notes+"\t"+resources);
-
+                }
+            }
+        }
+    }
+    public String nonNullValue(String... sections){
+        for(String s:sections){
+            if(s!=null && !s.equals("")){
+                return s;
+            }
+        }
+        return null;
+    }
+    public void update(Section section){
+        try {
+            sectionDAO.update(section);
+        }catch (Exception exception){
+            System.out.println("SECTION CODE:"+section.getSectionCode());
+            exception.printStackTrace();
         }
     }
     public static void main(String[] args) throws Exception {
