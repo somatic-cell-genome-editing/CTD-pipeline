@@ -50,30 +50,42 @@ public class ExcelParser {
     public void parseResources( XSSFSheet sheet) throws Exception {
 
 
-        System.out.println("title\tname\turl\tsection");
+      //  System.out.println("title\tname\turl\tsection\\");
         boolean headerRow=true;
         for (Row row : sheet) {
             if(headerRow){
                 headerRow=false;
             }else {
-                String description = String.valueOf(row.getCell(0));
-                String url= String.valueOf(row.getCell(1)).trim();
-                String name = String.valueOf(row.getCell(2)).trim();
-                String dateIssued = String.valueOf(row.getCell(3)).trim();
-                String ctdSection = String.valueOf(row.getCell(4)).trim();
-                CTDResource resource=new CTDResource();
-                resource.setResourceDescription(description);
-                resource.setResourceName(name);
-                resource.setResourceUrl(url);;
-                resource.setCtdSection(ctdSection);
-                resource.setDateIssued(dateIssued);
-                System.out.println(gson.toJson(resource));
+                String[] ctdSections = String.valueOf(row.getCell(4)).trim().split(",");
+                for (String ctdSection : ctdSections) {
+                    String description = String.valueOf(row.getCell(0));
+                    String url = String.valueOf(row.getCell(1)).trim();
+                    String name = String.valueOf(row.getCell(2)).trim();
+                    String dateIssued = String.valueOf(row.getCell(3)).trim();
+
+
+                    String type = String.valueOf(row.getCell(5)).trim();
+                    String filePath = String.valueOf(row.getCell(6)).trim();
+                    String source = String.valueOf(row.getCell(7)).trim();
+                    CTDResource resource = new CTDResource();
+                    resource.setResourceDescription(description);
+                    resource.setResourceName(name);
+                    resource.setResourceUrl(url);
+                    ;
+                    resource.setCtdSection(ctdSection);
+                    resource.setDateIssued(dateIssued);
+                    resource.setSource(source);
+                    resource.setType(type);
+                    resource.setFilePath(filePath);
+                    System.out.println(gson.toJson(resource));
                 try {
                     if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
-                            && resource.getResourceUrl()!=null  && resource.getResourceUrl()!=null && !resource.getResourceUrl().equals("null"))
+                            && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
+                    || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
                         resourceDAO.insert(resource);
                 }catch (Exception e){
                     e.printStackTrace();
+                }
                 }
             }
         }
@@ -145,21 +157,26 @@ public class ExcelParser {
                 String subSection4 = String.valueOf(row.getCell(4)).trim();
                 String sectionCode=nonNullValue(subSection1,subSection2,subSection3,subSection4);
 
-                String pathToFile = String.valueOf(row.getCell(10));
-                String templateLinkText = String.valueOf(row.getCell(11));
-                String exampleLinkText = String.valueOf(row.getCell(12));
+//                String pathToFile = String.valueOf(row.getCell(10));
+//                String templateLinkText = String.valueOf(row.getCell(11));
+//                String exampleLinkText = String.valueOf(row.getCell(12));
+                String pathToFile = String.valueOf(row.getCell(12));
+                String templateLinkText = String.valueOf(row.getCell(13));
+                String exampleLinkText = String.valueOf(row.getCell(14));
 
                 if(!module && sectionCode!=null) {
                     CTDResource resource=new CTDResource();
                     resource.setCtdSection(sectionCode);
-                    resource.setFilePath(pathToFile);
+                    if(pathToFile!=null) {
+                        resource.setFilePath(pathToFile.replace("######", "000000"));
+                    }
                     resource.setSource("scge");
                     if(templateLinkText!=null && !templateLinkText.equals("")){
                         resource.setResourceName(templateLinkText);
                         resource.setType("template");
                         System.out.println(gson.toJson(resource));
 
-                      resourceDAO.insert(resource);
+                     resourceDAO.insert(resource);
 
                     }
                     if(exampleLinkText!=null && !exampleLinkText.equals("")){
@@ -167,7 +184,7 @@ public class ExcelParser {
                         resource.setType("example");
                         System.out.println(gson.toJson(resource));
 
-                        resourceDAO.insert(resource);
+                       resourceDAO.insert(resource);
 
                     }
 
@@ -205,6 +222,7 @@ public class ExcelParser {
                 }
               }
             case "moduleResources" -> {
+                //Before running this case, please make sure the excel sheet section columns to be 4 otherwise add missing empty columns
                 List<String> sheets = Arrays.asList("Module 1", "Module 2", "Module 3", "Module 4", "Module 5");
                 for(String sheet:sheets) {
                     //String sheet = "Module 5";
