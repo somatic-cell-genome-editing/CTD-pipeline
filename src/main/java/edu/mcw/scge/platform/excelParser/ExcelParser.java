@@ -82,13 +82,26 @@ public class ExcelParser {
                     if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
                             && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
                     || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
-                        resourceDAO.insert(resource);
+                        insertResource(resource);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
                 }
             }
         }
+    }
+    public void insertResource(CTDResource resource) throws Exception {
+        if (!existsResource(resource)) {
+            resourceDAO.insert(resource);
+        }
+
+    }
+    public boolean existsResource(CTDResource resource) throws Exception {
+        List<CTDResource> existingResource=resourceDAO.getCTDResource(resource);
+        if(existingResource!=null && existingResource.size()>0){
+            return true;
+        }
+        return false;
     }
     public void parseSectionInfo( XSSFSheet sheet) throws Exception {
 
@@ -176,7 +189,7 @@ public class ExcelParser {
                         resource.setType("template");
                         System.out.println(gson.toJson(resource));
 
-                     resourceDAO.insert(resource);
+                     insertResource(resource);
 
                     }
                     if(exampleLinkText!=null && !exampleLinkText.equals("")){
@@ -184,7 +197,7 @@ public class ExcelParser {
                         resource.setType("example");
                         System.out.println(gson.toJson(resource));
 
-                       resourceDAO.insert(resource);
+                       insertResource(resource);
 
                     }
 
