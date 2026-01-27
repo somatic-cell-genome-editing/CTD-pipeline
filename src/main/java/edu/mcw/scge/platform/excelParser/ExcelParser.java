@@ -65,23 +65,22 @@ public class ExcelParser {
 
 
                     String type = String.valueOf(row.getCell(5)).trim();
-                    String filePath = String.valueOf(row.getCell(6)).trim();
-                    String source = String.valueOf(row.getCell(7)).trim();
+                    String filePath = String.valueOf(row.getCell(7)).trim();
+                    String source = String.valueOf(row.getCell(6)).trim();
                     CTDResource resource = new CTDResource();
                     resource.setResourceDescription(description);
                     resource.setResourceName(name);
-                    resource.setResourceUrl(url);
-                    ;
+                    resource.setResourceUrl(url);;
                     resource.setCtdSection(ctdSection);
                     resource.setDateIssued(dateIssued);
                     resource.setSource(source);
                     resource.setType(type);
-                    resource.setFilePath(filePath);
-                    System.out.println(gson.toJson(resource));
+                    resource.setFilePath(filePath.replace("######", "000000"));
+//                    System.out.println(gson.toJson(resource));
                 try {
-                    if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
-                            && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
-                    || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
+//                    if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
+//                            && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
+//                    || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
                         insertResource(resource);
                 }catch (Exception e){
                     e.printStackTrace();
@@ -236,7 +235,8 @@ public class ExcelParser {
               }
             case "moduleResources" -> {
                 //Before running this case, please make sure the excel sheet section columns to be 4 otherwise add missing empty columns
-                List<String> sheets = Arrays.asList("Module 1", "Module 2", "Module 3", "Module 4", "Module 5");
+//                List<String> sheets = Arrays.asList("Module 1", "Module 2", "Module 3", "Module 4", "Module 5");
+                List<String> sheets = Arrays.asList("Module 4");
                 for(String sheet:sheets) {
                     //String sheet = "Module 5";
                     parser.parseFile(fileName, sheet,"module resources");
