@@ -29,7 +29,7 @@ public class ExcelParser {
         FileInputStream fs = new FileInputStream(new File(file));
         XSSFWorkbook workbook = new XSSFWorkbook(fs);
         XSSFSheet sheet = workbook.getSheet(sheetName);
-
+        int moduleNumber= Integer.parseInt(sheetName.substring(sheetName.indexOf(" ")).trim());
         if (sheet == null) {
             throw new Exception("Sheet is null");
         }
@@ -38,7 +38,7 @@ public class ExcelParser {
                 parseResources(sheet);
                 break;
             case "module":
-                parseSectionInfo(sheet);
+                parseSectionInfo(sheet, moduleNumber);
                 break;
             case "module resources":
                 parseModuleResources(sheet);
@@ -102,49 +102,59 @@ public class ExcelParser {
         }
         return false;
     }
-    public void parseSectionInfo( XSSFSheet sheet) throws Exception {
+    public void parseSectionInfo( XSSFSheet sheet, int moduleNumber) throws Exception {
 
         ObjectMapper mapper = JsonMapper.builder().
                 enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER).build();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        System.out.println("Module\tSection\tSubSection1\tSubSection2\tSubSection3\tDescription\tRequiredForInitialIND\tRequiredForMarketingApplication\t" +
-                "RequiredForAmendment\tPathToFile\tTemplateLinkText\tExampleLinkText\tSubmissionFormat\tNotes\tResources");
-        boolean headerRow=true;
+         boolean headerRow=true;
         for (Row row : sheet) {
             if(headerRow){
                 headerRow=false;
             }else {
-                boolean module = !String.valueOf(row.getCell(0)).equals("");
+//                boolean module = !String.valueOf(row.getCell(0)).equals("");
+                String subSection0= String.valueOf(row.getCell(0)).trim();
                 String subSection1= String.valueOf(row.getCell(1)).trim();
                 String subSection2 = String.valueOf(row.getCell(2)).trim();
                 String subSection3 = String.valueOf(row.getCell(3)).trim();
                 String subSection4 = String.valueOf(row.getCell(4)).trim();
-                String sectionCode=nonNullValue(subSection1,subSection2,subSection3,subSection4);
+                String sectionCode=nonNullValue(subSection0,subSection1,subSection2,subSection3,subSection4);
+                String sectionName=String.valueOf(row.getCell(5));
                 String description = String.valueOf(row.getCell(6));
-                String requiredForInitialIND = String.valueOf(row.getCell(7));
-                String requiredForMarketingApplicationsOnly = String.valueOf(row.getCell(8));
-                String submissionTiming = String.valueOf(row.getCell(9));
-                String pathToFile = String.valueOf(row.getCell(10));
-                String templateLinkText = String.valueOf(row.getCell(11));
-                String exampleLinkText = String.valueOf(row.getCell(12));
-                String submissionFormat = String.valueOf(row.getCell(13));
-                String notes = String.valueOf(row.getCell(14));
-                String resources = String.valueOf(row.getCell(15));
-                if(!module && sectionCode!=null) {
+                String requiredForInitialIND = String.valueOf(row.getCell(8));
+                String requiredForMarketingApplicationsOnly = String.valueOf(row.getCell(9));
+                String submissionTiming = String.valueOf(row.getCell(10));
+//                String pathToFile = String.valueOf(row.getCell(10));
+//                String templateLinkText = String.valueOf(row.getCell(11));
+//                String exampleLinkText = String.valueOf(row.getCell(12));
+//                String submissionFormat = String.valueOf(row.getCell(13));
+                String notes = String.valueOf(row.getCell(13));
+ //               String resources = String.valueOf(row.getCell(15));
+//                if(!module && sectionCode!=null) {
+                    if(sectionCode!=null && !sectionCode.equals("null") && !sectionCode.equals("")) {
                     Section section=new Section();
-                    section.setSectionCode(sectionCode);
+                    section.setSectionCode(sectionCode.trim());
+                    section.setSectionName(sectionName);
+                    section.setModuleCode(moduleNumber);
+                    if(sectionCode.lastIndexOf(".")>0) {
+                        String parentId = sectionCode.substring(0, sectionCode.lastIndexOf(".")).trim();
+                        section.setParentId(parentId);
+                    }else section.setParentId(sectionCode.trim());
+                    String[] sectionTokens=sectionCode.split("\\.");
+                    int level=sectionTokens.length;
+                    section.setLevel(level);
                     section.setRequiredForInitialIND(requiredForInitialIND);
                     section.setSubmissionTiming(submissionTiming);
                     section.setRequiredForMarketingApplicationOnly(requiredForMarketingApplicationsOnly);
-                    section.setPathToFile(pathToFile);
-                    section.setTemplateLinkText(templateLinkText);
-                    section.setExampleLinkText(exampleLinkText);
-                    section.setSubmissionFormat(submissionFormat);
+//                    section.setPathToFile(pathToFile);
+//                    section.setTemplateLinkText(templateLinkText);
+//                    section.setExampleLinkText(exampleLinkText);
+//                    section.setSubmissionFormat(submissionFormat);
                     section.setNotes(notes);
                     section.setSectionDescription(description);
-                    section.setResources(resources);
+//                    section.setResources(resources);
                     System.out.println(gson.toJson(section));
-                    update(section);
+                 update(section);
 
                 }
             }
@@ -216,7 +226,12 @@ public class ExcelParser {
     }
     public void update(Section section){
         try {
-            sectionDAO.update(section);
+            if(sectionDAO.existsSection(section)) {
+                sectionDAO.update(section);
+            }else{
+                section.setSectionId(sectionDAO.getNextKey("ctd_sectiion_key"));
+                sectionDAO.insert(section);
+            }
         }catch (Exception exception){
             System.out.println("SECTION CODE:"+section.getSectionCode());
             exception.printStackTrace();
@@ -233,15 +248,15 @@ public class ExcelParser {
                 parser.parseFile(fileName, sheet,"module");
                 }
               }
-            case "moduleResources" -> {
-                //Before running this case, please make sure the excel sheet section columns to be 4 otherwise add missing empty columns
-//                List<String> sheets = Arrays.asList("Module 1", "Module 2", "Module 3", "Module 4", "Module 5");
-                List<String> sheets = Arrays.asList("Module 4");
-                for(String sheet:sheets) {
-                    //String sheet = "Module 5";
-                    parser.parseFile(fileName, sheet,"module resources");
-                }
-            }
+//            case "moduleResources" -> {
+//                //Before running this case, please make sure the excel sheet section columns to be 4 otherwise add missing empty columns
+////                List<String> sheets = Arrays.asList("Module 1", "Module 2", "Module 3", "Module 4", "Module 5");
+//                List<String> sheets = Arrays.asList("Module 4");
+//                for(String sheet:sheets) {
+//                    //String sheet = "Module 5";
+//                    parser.parseFile(fileName, sheet,"module resources");
+//                }
+//            }
             case "resources" -> {
                 String resourcesSheet = "Resources Table";
                 parser.parseFile(fileName, resourcesSheet, "resources");
