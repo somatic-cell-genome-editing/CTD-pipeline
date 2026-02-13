@@ -9,7 +9,10 @@ import edu.mcw.scge.dao.implementation.ctd.CTDResourceDAO;
 import edu.mcw.scge.dao.implementation.ctd.SectionDAO;
 import edu.mcw.scge.datamodel.ctd.CTDResource;
 import edu.mcw.scge.datamodel.ctd.Section;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.util.NumberToTextConverter;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -29,7 +32,6 @@ public class ExcelParser {
         FileInputStream fs = new FileInputStream(new File(file));
         XSSFWorkbook workbook = new XSSFWorkbook(fs);
         XSSFSheet sheet = workbook.getSheet(sheetName);
-        int moduleNumber= Integer.parseInt(sheetName.substring(sheetName.indexOf(" ")).trim());
         if (sheet == null) {
             throw new Exception("Sheet is null");
         }
@@ -38,6 +40,7 @@ public class ExcelParser {
                 parseResources(sheet);
                 break;
             case "module":
+                int moduleNumber= Integer.parseInt(sheetName.substring(sheetName.indexOf(" ")).trim());
                 parseSectionInfo(sheet, moduleNumber);
                 break;
             case "module resources":
@@ -56,36 +59,52 @@ public class ExcelParser {
             if(headerRow){
                 headerRow=false;
             }else {
-                String[] ctdSections = String.valueOf(row.getCell(4)).trim().split(",");
-                for (String ctdSection : ctdSections) {
-                    String description = String.valueOf(row.getCell(0));
-                    String url = String.valueOf(row.getCell(1)).trim();
-                    String name = String.valueOf(row.getCell(2)).trim();
-                    String dateIssued = String.valueOf(row.getCell(3)).trim();
+                Cell sectionCode=row.getCell(4);
+                if(String.valueOf(sectionCode).contains(",")){
+                    String[] ctdSections = String.valueOf(row.getCell(4)).trim().split(",");
+                    for (String section : ctdSections) {
+                        buildResource(row, section);
+
+                    }
+                }else{
+                    DataFormatter dataFormatter = new DataFormatter();
+                    String section = dataFormatter.formatCellValue(sectionCode);
+                    buildResource(row, section);
+                }
 
 
-                    String type = String.valueOf(row.getCell(5)).trim();
-                    String filePath = String.valueOf(row.getCell(7)).trim();
-                    String source = String.valueOf(row.getCell(6)).trim();
-                    CTDResource resource = new CTDResource();
-                    resource.setResourceDescription(description);
-                    resource.setResourceName(name);
-                    resource.setResourceUrl(url);;
-                    resource.setCtdSection(ctdSection);
-                    resource.setDateIssued(dateIssued);
-                    resource.setSource(source);
-                    resource.setType(type);
-                    resource.setFilePath(filePath.replace("######", "000000"));
-//                    System.out.println(gson.toJson(resource));
-                try {
+            }
+        }
+    }
+    public void buildResource(Row row, String ctdSection){
+        String description = String.valueOf(row.getCell(0));
+        String url = String.valueOf(row.getCell(1)).trim();
+        String name = String.valueOf(row.getCell(2)).trim();
+        String dateIssued = String.valueOf(row.getCell(3)).trim();
+
+
+        String type = String.valueOf(row.getCell(5)).trim();
+        String filePath = String.valueOf(row.getCell(7)).trim();
+        String source = String.valueOf(row.getCell(6)).trim();
+        if (name != null && !name.equals("null") && !name.equals("")) {
+            CTDResource resource = new CTDResource();
+            resource.setResourceDescription(description);
+            resource.setResourceName(name);
+            resource.setResourceUrl(url);
+            ;
+            resource.setCtdSection(ctdSection);
+            resource.setDateIssued(dateIssued);
+            resource.setSource(source);
+            resource.setType(type);
+            resource.setFilePath(filePath.replace("######", "000000"));
+            System.out.println(gson.toJson(resource));
+            try {
 //                    if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
 //                            && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
 //                    || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
-                        insertResource(resource);
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-                }
+                insertResource(resource);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -113,7 +132,9 @@ public class ExcelParser {
                 headerRow=false;
             }else {
 //                boolean module = !String.valueOf(row.getCell(0)).equals("");
-                String subSection0= String.valueOf(row.getCell(0)).trim();
+                Cell cell=row.getCell(0);
+                DataFormatter dataFormatter = new DataFormatter();
+                String subSection0= dataFormatter.formatCellValue(cell);
                 String subSection1= String.valueOf(row.getCell(1)).trim();
                 String subSection2 = String.valueOf(row.getCell(2)).trim();
                 String subSection3 = String.valueOf(row.getCell(3)).trim();
