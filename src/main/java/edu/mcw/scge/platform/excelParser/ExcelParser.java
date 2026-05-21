@@ -86,23 +86,25 @@ public class ExcelParser {
         String type = String.valueOf(row.getCell(5)).trim();
         String filePath = String.valueOf(row.getCell(7)).trim();
         String source = String.valueOf(row.getCell(6)).trim();
-        if (name != null && !name.equals("null") && !name.equals("")) {
+        if (!name.equals("null") && !name.equals("")) {
             CTDResource resource = new CTDResource();
             resource.setResourceDescription(description);
             resource.setResourceName(name);
+            if( !url.equals("") && !url.equals("null"))
             resource.setResourceUrl(url);
             ;
             resource.setCtdSection(ctdSection);
             resource.setDateIssued(dateIssued);
             resource.setSource(source);
             resource.setType(type);
+            if( !filePath.equals("") && !filePath.equals("null"))
             resource.setFilePath(filePath.replace("######", "000000"));
             System.out.println(gson.toJson(resource));
             try {
 //                    if(resource.getResourceName()!=null && !resource.getResourceName().equals("") && !resource.getResourceName().equals("null")
 //                            && ((resource.getResourceUrl()!=null  && !resource.getResourceUrl().equals("") && !resource.getResourceUrl().equals("null"))
 //                    || (resource.getFilePath()!=null && resource.getFilePath().equals("") && !resource.getFilePath().equals("null"))))
-                insertResource(resource);
+               insertResource(resource);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -110,6 +112,7 @@ public class ExcelParser {
     }
     public void insertResource(CTDResource resource) throws Exception {
         if (!existsResource(resource)) {
+            System.out.println("NEW RESOURCE:"+ resource.getCtdSection());
             resourceDAO.insert(resource);
         }
 
@@ -175,7 +178,7 @@ public class ExcelParser {
                     section.setSectionDescription(description);
 //                    section.setResources(resources);
                     System.out.println(gson.toJson(section));
-                 update(section);
+            //     update(section);
 
                 }
             }
