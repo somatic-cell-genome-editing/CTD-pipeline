@@ -145,8 +145,8 @@ public class ExcelParser {
                 String sectionCode=nonNullValue(subSection0,subSection1,subSection2,subSection3,subSection4);
                 String sectionName=String.valueOf(row.getCell(5));
                 String description = String.valueOf(row.getCell(6));
-                String requiredForInitialIND = String.valueOf(row.getCell(8));
-                String requiredForMarketingApplicationsOnly = String.valueOf(row.getCell(9));
+                String requiredForInitialIND = RequirementValue.normalize(String.valueOf(row.getCell(8)));
+                String requiredForMarketingApplicationsOnly = RequirementValue.normalize(String.valueOf(row.getCell(9)));
                 String submissionTiming = String.valueOf(row.getCell(10));
 //                String pathToFile = String.valueOf(row.getCell(10));
 //                String templateLinkText = String.valueOf(row.getCell(11));
@@ -178,7 +178,7 @@ public class ExcelParser {
                     section.setSectionDescription(description);
 //                    section.setResources(resources);
                     System.out.println(gson.toJson(section));
-            //     update(section);
+                 update(section);
 
                 }
             }
